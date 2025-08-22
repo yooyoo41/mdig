@@ -18,6 +18,7 @@
 
 ### 三、使用方式
 
-`mdig.go [-dns server] [-type a|aaaa] <domain>`
+`mdig.go [-dns server] [-dnstype a|aaaa] [-iptype 4|6|all] <domain>`
 
-`mdig -dns 8.8.8.8 -type a www.baidu.com`
+`mdig -dns 8.8.8.8 -dnstype a -iptype 4 www.baidu.com`
+
