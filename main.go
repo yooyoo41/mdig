@@ -38,6 +38,7 @@ type QueryResult struct {
 var (
 	dnsServer string
 	dnstype   string
+	iptype    string
 	rootHints = []string{
 		"a.root-servers.net.",
 		"b.root-servers.net.", "c.root-servers.net.",
@@ -50,11 +51,12 @@ var (
 
 func main() {
 	flag.StringVar(&dnsServer, "dns", "8.8.8.8", "DNS server to use for initial queries")
-	flag.StringVar(&dnstype, "type", "a", "IP version to test (a, aaaa)")
+	flag.StringVar(&dnstype, "dnstype", "a/aaaa", "DNS type to test (a, aaaa)")
+	flag.StringVar(&iptype, "iptype", "4/6", "IP version to test (4, 6, all)")
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
-		fmt.Println("Usage: mdig.go [-dns server] [-type a|aaaa] <domain>")
+		fmt.Println("Usage: mdig [-dns server] [-dnstype a|aaaa] [-iptype 4|6|all] <domain>")
 		return
 	}
 
@@ -132,7 +134,7 @@ func printDNSResult(res DNSResult) {
 
 	for _, auth := range res.Authorities {
 		fmt.Printf("  ├─ NS: %s\n", auth.Hostname)
-		fmt.Printf("  │   ├─ IP: %s\n", auth.IPs)
+		fmt.Printf("  │   ├─ NS IP: %s\n", auth.IPs)
 
 		if len(auth.Responses) > 0 {
 			fmt.Printf("  │   ├─ Responses:\n")
@@ -141,7 +143,8 @@ func printDNSResult(res DNSResult) {
 			}
 		} else {
 			// fmt.Printf("  │   ├─ Responses:\n")
-			fmt.Printf("  │   ├─ Responses: No responses found\n")
+			fmt.Printf("  │   ├─ Responses: \n")
+			fmt.Printf("  │   │   ├─ %s\n", "No responses found")
 		}
 
 		if len(auth.QueryResults) > 0 {
@@ -239,13 +242,15 @@ func queryAuthorities(domain, server string, dnstype uint16) ([]dns.RR, error) {
 
 func lookupSpecificIP(hostname string) ([]net.IP, error) {
 	var qtypes []uint16
-	switch dnstype {
-	case "a":
+	switch iptype {
+	case "4":
 		qtypes = []uint16{dns.TypeA}
-	case "aaaa":
+	case "6":
 		qtypes = []uint16{dns.TypeAAAA}
+	case "all":
+		qtypes = []uint16{dns.TypeA, dns.TypeAAAA}
 	default:
-		qtypes = []uint16{dns.TypeA}
+		qtypes = []uint16{dns.TypeCNAME}
 	}
 
 	var ips []net.IP
